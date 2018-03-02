@@ -1,0 +1,5 @@
+# NOTE: This file NEEDS to be edited and encrypted via AnsibleVault.
+# DO NOT DEPLOY WITHOUT ENCRYPTING THIS FILE
+
+jenkins_user: MY_ADMIN_USER
+jenkins_pass: MY_ADMIN_PASS

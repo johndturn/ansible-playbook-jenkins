@@ -1,0 +1,44 @@
+---
+
+# Needed for Ansible to run on server
+- name: Install Python2
+  raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
+
+- name: Tap into Jenkins repo for apt - Step 1
+  apt_key:
+    url: https://pkg.jenkins.io/debian/jenkins-ci.org.key
+    state: present
+
+- name: Tap into Jenkins repo for apt - Step 2
+  apt_repository:
+    repo: deb http://pkg.jenkins.io/debian-stable binary/
+    state: present
+    update_cache: yes
+
+- name: Install Jenkins & Other Deps
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  with_items:
+    - jenkins
+    - build-essential
+    - python-minimal
+    - python-pip
+    - libssl-dev
+    - libpq-dev
+
+- name: Enable Jenkins on startup
+  systemd:
+    name: jenkins
+    daemon_reload: yes
+    enabled: yes
+
+- name: Load in Jenkins settings
+  template:
+    src: jenkins.j2
+    dest: /etc/default/jenkins
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Jenkins

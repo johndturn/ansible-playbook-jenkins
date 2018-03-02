@@ -1,0 +1,69 @@
+---
+
+# NOTE: You will need to open the HTTP and HTTPS ports in the
+# Jenkins instance Security Group to 0.0.0.0/0 in order for
+# LetsEncrypt certbot to correctly verify the domain.
+
+- hosts: jenkins
+  become: true
+  remote_user: ubuntu
+  # This needs to be false first time to install python on Ubuntu 16.04
+  # Can be commented out after first run
+  gather_facts: False
+  vars_files:
+    # Store Jenkins admin username and password here
+    # NOTE: Should be encrypted via AnsibleVault
+    - variables/shared/jenkins_creds.yml
+  vars:
+    # Email to be associated with LetsEncrypt SSL certificate
+    lets_encrypt_email: YOUR_EMAIL
+    # Domain to be registered to the LetsEncrypt SSL certificate
+    lets_encrypt_domain: YOUR_DOMAIN
+    # Access logs for Nginx
+    nginx_access_log: /var/log/nginx/jenkins.access.log
+    # Error logs for Nginx
+    nginx_error_log: /var/log/nginx/jenkins.error.log
+    # Directory to store all of LetsEncrypt's information
+    lets_encrypt_directory: /var/www/letsencrypt
+    # Dictionary of plugins that you would like to install
+    j_plugins:
+      # ID of the plugin
+      greenballs:
+        enabled: yes
+        state: latest
+      # Bitbucket Plugin - Should be removed if not using
+      # Bitbucket, only here to demonstrate setting up a Job
+      cloudbees-bitbucket-branch-source:
+        enabled: yes
+        state: latest
+    # The name of the Jenkins job that you would like to create
+    # NOTE: This should be transferred to a YAML dictionary in order
+    # to accommodate multiple jobs
+    job_name: YOUR_JENKINS_JOB_NAME
+    # How many days to keep old builds
+    prune_branches_days: 10
+    # Total number of old builds to keep
+    prune_branches_num_to_keep: 5
+    # The Jenkins Credentials ID for the BitBucket user that will
+    # allow Jenkins to scan your BitBucket repos
+    # NOTE: Currently needs to be set up manually prior to running
+    # jenkins_configure role.
+    credentials_id: YOUR_JENKINS_CREDENTIALS_ID_FOR_BITBUCKET
+    # The name of your team/organization in BitBucket
+    repo_owner: YOUR_BITBUCKET_REPO
+    # Path to your different project's Jenkinsfile
+    # NOTE: Should be the same in all of your projects
+    # E.g., devops/jenkins/Jenkinsfile
+    jenkinsfile_path: PATH_TO_PROJECT_JENKINSFILE
+  pre_tasks:
+    - name: Upgrade packages
+      apt:
+        update_cache: yes
+        upgrade: yes
+        cache_valid_time: 300
+  roles:
+    - jenkins_deploy
+    - jenkins_nginx
+    # Credit: This role is based on another found at the following repo:
+    # https://github.com/geerlingguy/ansible-role-jenkins
+    - jenkins_configure

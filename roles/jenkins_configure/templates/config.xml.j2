@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jenkins.branch.OrganizationFolder plugin="branch-api@2.0.18">
+  <actions/>
+  <description></description>
+  <displayName>{{ job_name }}</displayName>
+  <properties>
+    <org.jenkinsci.plugins.pipeline.modeldefinition.config.FolderConfig plugin="pipeline-model-definition@1.2.7">
+      <dockerLabel></dockerLabel>
+      <registry plugin="docker-commons@1.11"/>
+    </org.jenkinsci.plugins.pipeline.modeldefinition.config.FolderConfig>
+    <jenkins.branch.NoTriggerOrganizationFolderProperty>
+      <branches>.*</branches>
+    </jenkins.branch.NoTriggerOrganizationFolderProperty>
+  </properties>
+  <folderViews class="jenkins.branch.OrganizationFolderViewHolder">
+    <owner reference="../.."/>
+  </folderViews>
+  <healthMetrics>
+    <com.cloudbees.hudson.plugins.folder.health.WorstChildHealthMetric plugin="cloudbees-folder@6.3">
+      <nonRecursive>false</nonRecursive>
+    </com.cloudbees.hudson.plugins.folder.health.WorstChildHealthMetric>
+  </healthMetrics>
+  <icon class="jenkins.branch.MetadataActionFolderIcon">
+    <owner class="jenkins.branch.OrganizationFolder" reference="../.."/>
+  </icon>
+  <orphanedItemStrategy class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy" plugin="cloudbees-folder@6.3">
+    <pruneDeadBranches>true</pruneDeadBranches>
+    <daysToKeep>{{ prune_branches_days }}</daysToKeep>
+    <numToKeep>{{ prune_branches_num_to_keep }}</numToKeep>
+  </orphanedItemStrategy>
+  <triggers>
+    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger plugin="cloudbees-folder@6.3">
+      <spec>* * * * *</spec>
+      <interval>60000</interval>
+    </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
+  </triggers>
+  <disabled>false</disabled>
+  <navigators>
+    <com.cloudbees.jenkins.plugins.bitbucket.BitbucketSCMNavigator plugin="cloudbees-bitbucket-branch-source@2.2.10">
+      <serverUrl>https://bitbucket.org</serverUrl>
+      <credentialsId>{{ credentials_id }}</credentialsId>
+      <repoOwner>{{ repo_owner }}</repoOwner>
+      <traits>
+        <com.cloudbees.jenkins.plugins.bitbucket.BranchDiscoveryTrait>
+          <strategyId>1</strategyId>
+        </com.cloudbees.jenkins.plugins.bitbucket.BranchDiscoveryTrait>
+        <com.cloudbees.jenkins.plugins.bitbucket.OriginPullRequestDiscoveryTrait>
+          <strategyId>1</strategyId>
+        </com.cloudbees.jenkins.plugins.bitbucket.OriginPullRequestDiscoveryTrait>
+        <com.cloudbees.jenkins.plugins.bitbucket.ForkPullRequestDiscoveryTrait>
+          <strategyId>1</strategyId>
+          <trust class="com.cloudbees.jenkins.plugins.bitbucket.ForkPullRequestDiscoveryTrait$TrustTeamForks"/>
+        </com.cloudbees.jenkins.plugins.bitbucket.ForkPullRequestDiscoveryTrait>
+      </traits>
+    </com.cloudbees.jenkins.plugins.bitbucket.BitbucketSCMNavigator>
+  </navigators>
+  <projectFactories>
+    <org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProjectFactory plugin="workflow-multibranch@2.17">
+      <scriptPath>{{ jenkinsfile_path }}</scriptPath>
+    </org.jenkinsci.plugins.workflow.multibranch.WorkflowMultiBranchProjectFactory>
+  </projectFactories>
+  <buildStrategies/>
+</jenkins.branch.OrganizationFolder>

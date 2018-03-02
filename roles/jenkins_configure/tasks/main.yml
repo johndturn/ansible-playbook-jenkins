@@ -1,0 +1,75 @@
+---
+
+- name: Install Required Deps
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - libxml2-dev
+    - libxslt1-dev
+    - python-dev
+    - python-jenkins
+
+- name: Specifically install lxml via Pip
+  pip:
+    name: lxml
+
+- name: Install Plugins
+  jenkins_plugin:
+    name: "{{ item.key }}"
+    url_username: "{{ jenkins_user }}"
+    url_password: "{{ jenkins_pass }}"
+  register: j_plugins_done
+  with_dict: "{{ j_plugins }}"
+
+- name: Initiate Restart Fact
+  set_fact:
+    j_restart: no
+
+- name: Check if restart is required by any plugins
+  set_fact:
+    j_restart: yes
+  when: item.changed
+  with_items: "{{ j_plugins_done.results }}"
+
+- name: Restart Jenkins if required
+  service:
+    name: jenkins
+    state: restarted
+  when: j_restart
+
+- name: Wait for Jenkins to start up
+  uri:
+    url: http://localhost:8080
+    status_code: 200
+    timeout: 5
+  register: jenkins_service_status
+  # Keep trying for 5 mins in 5 sec intervals
+  retries: 60
+  delay: 5
+  until: >
+      'status' in jenkins_service_status and
+      jenkins_service_status['status'] == 200
+  when: j_restart
+
+- name: Reset the fact
+  set_fact:
+    j_restart: no
+  when: j_restart
+
+- name: Plugin enabling
+  jenkins_plugin:
+    name: "{{ item.key }}"
+    state: "{{ 'enabled' if item.value['enabled'] else 'disabled'}}"
+    url_username: "{{ jenkins_user }}"
+    url_password: "{{ jenkins_pass }}"
+  when: >
+    'enabled' in item.value
+  with_dict: "{{ j_plugins }}"
+
+- name: Set up Jenkins job for BitBucket Integration
+  jenkins_job:
+    config: "{{ lookup('template', 'templates/config.xml.j2') }}"
+    name: {{ job_name }}
+    user: "{{ jenkins_user }}"
+    password: "{{ jenkins_pass }}"
